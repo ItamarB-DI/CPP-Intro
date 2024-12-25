@@ -1,7 +1,6 @@
 #include "fanotify_handler.hpp"
 
 #include <fcntl.h>
-#include <sys/fanotify.h>
 #include <unistd.h>
 
 FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
@@ -83,16 +82,26 @@ void FaNotifyHandler::handleEvent(struct fanotify_event_metadata *event_meta_dat
     size_t BUFFER_MAX_SIZE = 1024;
     std::vector<char> path(BUFFER_MAX_SIZE, 0);
     
-    std::ostringstream oss;
-    oss << "/proc/self/fd/" << event_meta_data->fd;
+    std::ostringstream fds_system_data;
+    fds_system_data << "/proc/self/fd/" << event_meta_data->fd;
 
-    ssize_t len = readlink(oss.str().c_str(), path.data(), path.size());
+    ssize_t len = readlink(fds_system_data.str().c_str(), path.data(), path.size());
+    if (len == -1) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "readlink syscall failed");
+    }
+
+    std::vector<char> process(BUFFER_MAX_SIZE, 0);
+    std::ostringstream process_system_data;
+  
+    process_system_data << "/proc/" << event_meta_data->pid << "/exe";
+
+    len = readlink(process_system_data.str().c_str(), process.data(), process.size());
     if (len == -1) {
         throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "readlink syscall failed");
     }
 
     std::lock_guard<std::mutex> lock(m_lock_events);
-    m_events.push({path, event_meta_data->fd, event_meta_data->pid});
+    m_events.push({path, event_meta_data->fd, process, event_meta_data->pid});
 }
 
 void FaNotifyHandler::replyToFa() {
