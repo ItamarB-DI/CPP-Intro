@@ -16,7 +16,7 @@ public:
     }EMPTY_EVENT{std::vector<char>(),0,std::vector<char>(),0};
     
 
-    FaNotifyHandler(std::vector<std::filesystem::path>& files);
+    explicit FaNotifyHandler(std::vector<std::filesystem::path>& files);
     FaNotifyHandler(const FaNotifyHandler& other) = delete; 
     FaNotifyHandler &operator=(const FaNotifyHandler& other) = delete; 
     ~FaNotifyHandler();
