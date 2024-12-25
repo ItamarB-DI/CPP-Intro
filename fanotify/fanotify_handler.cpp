@@ -5,7 +5,9 @@
 #include <unistd.h>
 
 FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
-: m_files(files) {
+: m_files(files),
+  m_lock_replies(),
+  m_lock_events() {
 
     m_fanotify = fanotify_init(FAN_NONBLOCK | FAN_CLOEXEC | FAN_CLASS_CONTENT, O_RDONLY);
     if (m_fanotify == -1) {
@@ -31,8 +33,7 @@ void FaNotifyHandler::listenForEvents() {
         int bytes_read = read(m_fanotify, buffer.data(), BUFFER_SIZE);
         if (bytes_read == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             
-            // ++ check the reply queue and if there is somthing, reply to it.
-
+            replyToFa();
         } else if (bytes_read == -1) {
 
             if ((errno == EINTR) && intr_fails < 5) {
@@ -43,16 +44,82 @@ void FaNotifyHandler::listenForEvents() {
             }
         }
 
-        // ++ create a fanotify_event_metadata
         struct fanotify_event_metadata* metadata = reinterpret_cast<struct fanotify_event_metadata*>(buffer.data());
         
         while (FAN_EVENT_OK(metadata, bytes_read)) {
-
-            // ++ EventItem x = private method to handle the event
-            // ++ if (x is valid) { push to event queue}
-            // ++ else ignore / throw an error. 
+            
+            handleEvent(metadata);
 
             metadata = FAN_EVENT_NEXT(metadata, bytes_read);
+        }
+    }
+}
+
+FaNotifyHandler::EventItem FaNotifyHandler::getTopEvent() {
+    
+    std::lock_guard<std::mutex> lock(m_lock_events);
+    auto curr = std::move(m_events.front());
+    m_events.pop();
+
+    return curr;
+}
+
+void FaNotifyHandler::addNewReply(struct fanotify_response new_response) {
+
+    std::lock_guard<std::mutex> lock(m_lock_replies);
+    m_replies.push(new_response);
+}
+
+void FaNotifyHandler::handleEvent(struct fanotify_event_metadata *event_meta_data) {
+
+    if (event_meta_data->vers != FANOTIFY_METADATA_VERSION) {
+        throw std::runtime_error("compile version of fanotify doesn't equal to run-time version");
+    }
+
+    if (event_meta_data->fd == FAN_NOFD) {
+        throw std::runtime_error("queue overflow occurred");
+    }
+
+    size_t BUFFER_MAX_SIZE = 1024;
+    std::vector<char> path(BUFFER_MAX_SIZE, 0);
+    
+    std::ostringstream oss;
+    oss << "/proc/self/fd/" << event_meta_data->fd;
+
+    ssize_t len = readlink(oss.str().c_str(), path.data(), path.size());
+    if (len == -1) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "readlink syscall failed");
+    }
+
+    std::lock_guard<std::mutex> lock(m_lock_events);
+    m_events.push({path, event_meta_data->fd, event_meta_data->pid});
+}
+
+void FaNotifyHandler::replyToFa() {
+
+    std::lock_guard<std::mutex> lock(m_lock_replies);
+    if (m_replies.empty()) { return; }
+
+    auto reply = m_replies.front();
+    m_replies.pop();
+
+    lock.~lock_guard();
+
+    int times_tried = 0;
+    while (times_tried < 3) {
+
+        ssize_t len = write(m_fanotify, &reply, sizeof(reply));
+        if (len == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                ++times_tried;
+                continue;
+            } else {
+                throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "write syscall failed");
+            }
+        } else if (len != sizeof(reply)) {
+            throw std::runtime_error("write written less/more bytes than what excpected");
+        } else {
+            break;
         }
     }
 }
