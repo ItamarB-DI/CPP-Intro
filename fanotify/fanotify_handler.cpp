@@ -6,7 +6,8 @@
 FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
 : m_files(files),
   m_lock_replies(),
-  m_lock_events() {
+  m_lock_events(),
+  m_stop(false) {
 
     m_fanotify = fanotify_init(FAN_NONBLOCK | FAN_CLOEXEC | FAN_CLASS_CONTENT, O_RDONLY);
     if (m_fanotify == -1) {
@@ -31,7 +32,7 @@ void FaNotifyHandler::listenForEvents() {
     std::vector<char> buffer(BUFFER_SIZE);
 
     int intr_fails = 0; 
-    while (true) {
+    while (!m_stop) {
 
         int bytes_read = read(m_fanotify, buffer.data(), BUFFER_SIZE);
         if (bytes_read == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -58,9 +59,15 @@ void FaNotifyHandler::listenForEvents() {
     }
 }
 
+void FaNotifyHandler::stopListening() {
+    m_stop = true;
+}
+
 FaNotifyHandler::EventItem FaNotifyHandler::getTopEvent() {
     
     std::lock_guard<std::mutex> lock(m_lock_events);
+    if (m_events.empty()) {return EMPTY_EVENT;}
+
     auto curr = std::move(m_events.front());
     m_events.pop();
 
