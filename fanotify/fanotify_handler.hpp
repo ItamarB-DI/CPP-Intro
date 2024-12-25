@@ -17,8 +17,8 @@ public:
     
 
     FaNotifyHandler(std::vector<std::filesystem::path>& files);
-    FaNotifyHandler(const FaNotifyHandler& other); // creates new locks and fd
-    FaNotifyHandler &operator=(const FaNotifyHandler& other); // creates new locks and fd
+    FaNotifyHandler(const FaNotifyHandler& other) = delete; 
+    FaNotifyHandler &operator=(const FaNotifyHandler& other) = delete; 
     ~FaNotifyHandler();
 
     void listenForEvents(); // this class run function (blocking)
