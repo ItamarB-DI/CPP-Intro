@@ -19,7 +19,45 @@ FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
             throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), std::string("fanotify_mark failed to mark")  + file_path.c_str());
         }
     }
+}
 
+FaNotifyHandler::FaNotifyHandler(const FaNotifyHandler& other)
+: m_files(other.m_files),
+  m_stop(other.m_stop),
+  m_lock_replies(),
+  m_lock_events() {
+
+    m_fanotify = fanotify_init(FAN_NONBLOCK | FAN_CLOEXEC | FAN_CLASS_CONTENT, O_RDONLY);
+    if (m_fanotify == -1) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "fanotify_init failed");
+    }
+
+    for (auto file_path : other.m_files) {
+        if (fanotify_mark(m_fanotify, FAN_MARK_ADD, FAN_OPEN_PERM, AT_FDCWD, file_path.c_str()) == -1) {
+            throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), std::string("fanotify_mark failed to mark")  + file_path.c_str());
+        }
+    }
+}
+
+FaNotifyHandler &FaNotifyHandler::operator=(const FaNotifyHandler& other) {
+    
+    if (this == &other) { return *this; }
+
+    m_files = other.m_files;
+    m_stop = other.m_stop;
+
+    close(m_fanotify);
+
+    m_fanotify = fanotify_init(FAN_NONBLOCK | FAN_CLOEXEC | FAN_CLASS_CONTENT, O_RDONLY);
+    if (m_fanotify == -1) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "fanotify_init failed");
+    }
+
+    for (auto file_path : other.m_files) {
+        if (fanotify_mark(m_fanotify, FAN_MARK_ADD, FAN_OPEN_PERM, AT_FDCWD, file_path.c_str()) == -1) {
+            throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), std::string("fanotify_mark failed to mark")  + file_path.c_str());
+        }
+    }
 }
 
 FaNotifyHandler::~FaNotifyHandler() {
