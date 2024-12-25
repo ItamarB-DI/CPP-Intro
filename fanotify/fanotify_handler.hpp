@@ -19,6 +19,8 @@ public:
     FaNotifyHandler(std::vector<std::filesystem::path>& files);
     FaNotifyHandler(const FaNotifyHandler& other) = delete;
     FaNotifyHandler &operator=(const FaNotifyHandler& other) = delete;
+    ~FaNotifyHandler();
+
     void listenForEvents();
     EventItem getTopEvent();
     void addNewReply(struct fanotify_response new_response); 

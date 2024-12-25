@@ -21,6 +21,10 @@ FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
 
 }
 
+FaNotifyHandler::~FaNotifyHandler() {
+    close(m_fanotify);
+}
+
 void FaNotifyHandler::listenForEvents() {
 
     const size_t BUFFER_SIZE = 4096;
