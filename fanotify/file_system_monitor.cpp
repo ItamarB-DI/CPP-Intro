@@ -3,8 +3,7 @@
 FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
                                      const std::vector<std::filesystem::path>& valid_files, 
                                      const std::vector<std::filesystem::path>& valid_process)
-: m_fa_handler(fa_handler),
-  m_stop(false) {
+: m_fa_handler(fa_handler) {
 
     for (auto file: valid_files) {
         std::string str = file.c_str();
@@ -23,7 +22,7 @@ FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
 
 void FileSystemMonitor::run() {
 
-    while (!m_stop) {
+    while (true) {
         FaNotifyHandler::EventItem event =  m_fa_handler.getTopEvent();
 
         auto status = checkEvent(event);
@@ -34,16 +33,12 @@ void FileSystemMonitor::run() {
     }
 }
 
-void FileSystemMonitor::stop() {
-    m_stop = true;
-}
-
 unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& event) {
 
     auto process_name = event.m_process;
     for (auto valid_process: m_valid_processes) {
 
-        if (valid_process == process_name) {
+        if (std::string(valid_process.data()) == std::string(process_name.data())) {
             return FAN_ACCESS;
         }
     }
@@ -55,7 +50,6 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
             return FAN_ACCESS;
         }
     }
-
 
     return FAN_DENY;
 }

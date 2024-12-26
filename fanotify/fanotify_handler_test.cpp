@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include <thread>
+#include <chrono>
 
 
 void handlerJob(FaNotifyHandler &fa, std::exception_ptr& ex);
 void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex);
+
 void basicTest();
 
 int main() {
@@ -52,7 +54,6 @@ void basicTest() {
         throw std::runtime_error(std::string("failed to create thread") + e.what());
     }
 
-
     if (handler_ex != nullptr) {
         std::rethrow_exception(handler_ex);
     }
@@ -84,6 +85,3 @@ void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex) {
         ex = eptr;
     }
 }
-
-
-

@@ -13,7 +13,6 @@ public:
                                const std::vector<std::filesystem::path>& valid_process);
 
     void run(); // blocking
-    void stop();
 
 private:
     unsigned int checkEvent(const FaNotifyHandler::EventItem& event);
@@ -21,5 +20,4 @@ private:
     FaNotifyHandler& m_fa_handler;
     std::vector<std::vector<char>> m_valid_files;
     std::vector<std::vector<char>> m_valid_processes;
-    bool m_stop;
 };

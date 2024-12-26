@@ -23,8 +23,7 @@ public:
     ~FaNotifyHandler();
 
     void listenForEvents(); // this class run function (blocking)
-    void stopListening();
-    EventItem getTopEvent(); // returns the first event (blocking)
+    EventItem getTopEvent(); // returns the first event (blocking) upon stop returns EMPTY_EVENT
     void addNewReply(struct fanotify_response new_response); // abling to append a repliy for the FA
 
 private:
@@ -38,7 +37,6 @@ private:
     std::mutex m_lock_replies;
     std::mutex m_lock_events;
     std::condition_variable m_events_cv;
-    bool m_stop;
 };
 
 
