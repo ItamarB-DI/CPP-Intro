@@ -25,15 +25,18 @@ int main() {
 
 void basicTest() {
     std::filesystem::path pwd = std::filesystem::current_path();
-    std::filesystem::path allow_file = pwd / "allow.txt";
-    std::filesystem::path deny_file = pwd / "deny.txt";
+    std::filesystem::path tracked_file = pwd / "tracked.txt";
+    std::filesystem::path monitored_file = pwd / "monitored.txt";
+
+    std::filesystem::path code = "/snap/code/177/usr/share/code/code";
+    std::filesystem::path gedit = "/usr/bin/gedit";
     
-    std::vector<std::filesystem::path> paths_to_listen_to({allow_file, deny_file});
-    std::vector<std::filesystem::path> valid_paths({allow_file});
-    std::vector<std::filesystem::path> valid_processes;
+    std::vector<std::filesystem::path> paths_to_listen_to({tracked_file, monitored_file});
+    std::vector<std::filesystem::path> tracked_paths({tracked_file});
+    std::vector<std::filesystem::path> valid_processes({code, gedit});
 
     FaNotifyHandler fa_handler(paths_to_listen_to);
-    FileSystemMonitor monitor(fa_handler, valid_paths, valid_processes);
+    FileSystemMonitor monitor(fa_handler, tracked_paths, valid_processes);
 
     std::exception_ptr handler_ex;
     std::exception_ptr monitor_ex;

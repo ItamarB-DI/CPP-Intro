@@ -1,5 +1,7 @@
 #include "file_system_monitor.hpp"
 
+#include <iostream>
+
 FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
                                      const std::vector<std::filesystem::path>& valid_files, 
                                      const std::vector<std::filesystem::path>& valid_process)
@@ -9,7 +11,7 @@ FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
         std::string str = file.c_str();
         std::vector<char> temp(str.begin(), str.end());
 
-        m_valid_files.push_back(temp);
+        m_tracked_files.push_back(temp);
     }
 
     for (auto process: valid_process) {
@@ -36,19 +38,32 @@ void FileSystemMonitor::run() {
 unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& event) {
 
     auto process_name = event.m_process;
-    for (auto valid_process: m_valid_processes) {
+    auto path = event.m_path;
+    
+    bool process_is_valid = false;
+    bool path_is_valid = false;
+    std::cout << process_name.data() << std::endl;
 
+    for (auto valid_process: m_valid_processes) {
         if (std::string(valid_process.data()) == std::string(process_name.data())) {
-            return FAN_ACCESS;
+            process_is_valid = true;
+            break;
         }
     }
 
-    auto path = event.m_path;
-    for (auto valid_file: m_valid_files) {
-
+    for (auto valid_file: m_tracked_files) {
         if (std::string(valid_file.data())  == std::string(path.data()) ) {
-            return FAN_ACCESS;
+            path_is_valid = true;
+            break;
         }
+    }
+
+    if (path_is_valid == true && process_is_valid == false) {
+        return FAN_DENY;
+    }
+
+    if (path_is_valid == false || process_is_valid == true) {
+        return FAN_ACCESS;
     }
 
     return FAN_DENY;
