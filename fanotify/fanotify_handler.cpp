@@ -7,6 +7,7 @@ FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
 : m_files(files),
   m_lock_replies(),
   m_lock_events(),
+  m_events_cv(),
   m_stop(false) {
 
     m_fanotify = fanotify_init(FAN_NONBLOCK | FAN_CLOEXEC | FAN_CLASS_CONTENT, O_RDONLY);
@@ -64,8 +65,9 @@ void FaNotifyHandler::stopListening() {
 
 FaNotifyHandler::EventItem FaNotifyHandler::getTopEvent() {
     
-    std::lock_guard<std::mutex> lock(m_lock_events);
-    if (m_events.empty()) {return EMPTY_EVENT;}
+    std::unique_lock<std::mutex> lock(m_lock_events);
+
+    m_events_cv.wait(lock, [this](){ return !m_events.empty(); });
 
     auto curr = std::move(m_events.front());
     m_events.pop();
@@ -112,6 +114,7 @@ void FaNotifyHandler::handleEvent(struct fanotify_event_metadata *event_meta_dat
 
     std::lock_guard<std::mutex> lock(m_lock_events);
     m_events.push({path, event_meta_data->fd, process, event_meta_data->pid});
+    m_events_cv.notify_all();
 }
 
 void FaNotifyHandler::replyToFa() {

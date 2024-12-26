@@ -10,14 +10,16 @@ class FileSystemMonitor
 public:
     
     // important fa_handler is saved by reference.
-    explicit FileSystemMonitor(FaNotifyHandler& fa_handler, std::vector<std::filesystem::path>& valid_files, std::vector<std::filesystem::path>& valid_exe);
+    explicit FileSystemMonitor(FaNotifyHandler& fa_handler, std::vector<std::filesystem::path>& valid_files, std::vector<std::filesystem::path>& valid_process);
 
     void run(); // blocking
     void stop();
 
 private:
+    unsigned int checkEvent(const FaNotifyHandler::EventItem& event);
+
     FaNotifyHandler& m_fa_handler;
-    std::vector<std::filesystem::path> m_valid_files;
-    std::vector<std::filesystem::path> m_valid_exe;
+    std::vector<std::vector<char>> m_valid_files;
+    std::vector<std::vector<char>> m_valid_processes;
     bool m_stop;
 };
