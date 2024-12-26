@@ -8,9 +8,9 @@
 class FileSystemMonitor
 {
 public:
-    
-    // important fa_handler is saved by reference.
-    explicit FileSystemMonitor(FaNotifyHandler& fa_handler, std::vector<std::filesystem::path>& valid_files, std::vector<std::filesystem::path>& valid_process);
+    explicit FileSystemMonitor(FaNotifyHandler& fa_handler,
+                               const std::vector<std::filesystem::path>& valid_files, 
+                               const std::vector<std::filesystem::path>& valid_process);
 
     void run(); // blocking
     void stop();

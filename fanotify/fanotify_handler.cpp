@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-FaNotifyHandler::FaNotifyHandler(std::vector<std::filesystem::path>& files)
+FaNotifyHandler::FaNotifyHandler(const std::vector<std::filesystem::path>& files)
 : m_files(files),
   m_lock_replies(),
   m_lock_events(),

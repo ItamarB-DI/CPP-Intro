@@ -1,7 +1,8 @@
 #include "file_system_monitor.hpp"
 
-
-FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler, std::vector<std::filesystem::path>& valid_files, std::vector<std::filesystem::path>& valid_process)
+FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
+                                     const std::vector<std::filesystem::path>& valid_files, 
+                                     const std::vector<std::filesystem::path>& valid_process)
 : m_fa_handler(fa_handler),
   m_stop(false) {
 
@@ -28,7 +29,7 @@ void FileSystemMonitor::run() {
         auto status = checkEvent(event);
 
         struct fanotify_response res = {event.m_fd, status};
-        
+
         m_fa_handler.addNewReply(res);
     }
 }
@@ -41,6 +42,7 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
 
     auto process_name = event.m_process;
     for (auto valid_process: m_valid_processes) {
+
         if (valid_process == process_name) {
             return FAN_ACCESS;
         }
@@ -48,7 +50,8 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
 
     auto path = event.m_path;
     for (auto valid_file: m_valid_files) {
-        if (valid_file == path) {
+
+        if (std::string(valid_file.data())  == std::string(path.data()) ) {
             return FAN_ACCESS;
         }
     }

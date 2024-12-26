@@ -17,7 +17,7 @@ public:
         int m_pid; // the process that made that event
     };
     
-    explicit FaNotifyHandler(std::vector<std::filesystem::path>& files);
+    explicit FaNotifyHandler(const std::vector<std::filesystem::path>& files);
     FaNotifyHandler(const FaNotifyHandler& other) = delete; 
     FaNotifyHandler &operator=(const FaNotifyHandler& other) = delete; 
     ~FaNotifyHandler();
@@ -31,7 +31,7 @@ private:
     void handleEvent(struct fanotify_event_metadata *event_meta_data);
     void replyToFa();
 
-    std::vector<std::filesystem::path>& m_files;
+    std::vector<std::filesystem::path> m_files;
     int m_fanotify;
     std::queue<EventItem> m_events;
     std::queue<struct fanotify_response> m_replies;
