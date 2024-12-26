@@ -87,25 +87,31 @@ void FaNotifyHandler::handleEvent(struct fanotify_event_metadata *event_meta_dat
     }
 
     size_t BUFFER_MAX_SIZE = 1024;
-    std::vector<char> path(BUFFER_MAX_SIZE, 0);
+    std::vector<char> buffer(BUFFER_MAX_SIZE);
     
     std::ostringstream fds_system_data;
     fds_system_data << "/proc/self/fd/" << event_meta_data->fd;
 
-    ssize_t len = readlink(fds_system_data.str().c_str(), path.data(), path.size());
+    ssize_t len = readlink(fds_system_data.str().c_str(), buffer.data(), buffer.size());
     if (len == -1) {
         throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "readlink syscall failed");
     }
 
-    std::vector<char> process(BUFFER_MAX_SIZE, 0);
+    buffer[len] = '\0';
+    std::filesystem::path path = std::filesystem::path(buffer.data());
+
+    std::fill(buffer.begin(), buffer.end(), '\0');
     std::ostringstream process_system_data;
   
     process_system_data << "/proc/" << event_meta_data->pid << "/exe";
 
-    len = readlink(process_system_data.str().c_str(), process.data(), process.size());
+    len = readlink(process_system_data.str().c_str(), buffer.data(), buffer.size());
     if (len == -1) {
         throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "readlink syscall failed");
     }
+
+    buffer[len] = '\0';
+    std::filesystem::path process = std::filesystem::path(buffer.data());
 
     std::lock_guard<std::mutex> lock(m_lock_events);
     m_events.push({path, event_meta_data->fd, process, event_meta_data->pid});

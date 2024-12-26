@@ -18,6 +18,6 @@ private:
     unsigned int checkEvent(const FaNotifyHandler::EventItem& event);
 
     FaNotifyHandler& m_fa_handler;
-    std::vector<std::vector<char>> m_tracked_files;
-    std::vector<std::vector<char>> m_valid_processes;
+    std::vector<std::filesystem::path> m_tracked_files;
+    std::vector<std::filesystem::path> m_valid_processes;
 };

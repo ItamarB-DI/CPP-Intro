@@ -3,23 +3,12 @@
 #include <iostream>
 
 FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
-                                     const std::vector<std::filesystem::path>& valid_files, 
+                                     const std::vector<std::filesystem::path>& tracked_files, 
                                      const std::vector<std::filesystem::path>& valid_process)
-: m_fa_handler(fa_handler) {
-
-    for (auto file: valid_files) {
-        std::string str = file.c_str();
-        std::vector<char> temp(str.begin(), str.end());
-
-        m_tracked_files.push_back(temp);
-    }
-
-    for (auto process: valid_process) {
-        std::string str = process.c_str();
-        std::vector<char> temp(str.begin(), str.end());
-
-        m_valid_processes.push_back(temp);
-    }    
+: m_fa_handler(fa_handler),
+  m_tracked_files(tracked_files),
+  m_valid_processes(valid_process) {
+    //empty
 }
 
 void FileSystemMonitor::run() {
@@ -42,17 +31,18 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
     
     bool process_is_valid = false;
     bool path_is_valid = false;
-    std::cout << process_name.data() << std::endl;
+
+    std::cout << process_name.c_str() << std::endl; //for testing
 
     for (auto valid_process: m_valid_processes) {
-        if (std::string(valid_process.data()) == std::string(process_name.data())) {
+        if (process_name == valid_process) {
             process_is_valid = true;
             break;
         }
     }
 
-    for (auto valid_file: m_tracked_files) {
-        if (std::string(valid_file.data())  == std::string(path.data()) ) {
+    for (auto tracked_file: m_tracked_files) {
+        if (path == tracked_file) {
             path_is_valid = true;
             break;
         }

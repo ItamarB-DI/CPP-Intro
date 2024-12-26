@@ -4,12 +4,17 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 
 void handlerJob(FaNotifyHandler &fa, std::exception_ptr& ex);
 void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex);
 
 void basicTest();
+void Test1(std::exception_ptr& ex);
 
 int main() {
 
@@ -40,10 +45,12 @@ void basicTest() {
 
     std::exception_ptr handler_ex;
     std::exception_ptr monitor_ex;
+    std::exception_ptr test_ex;
 
     try {
         std::thread handler_thread(handlerJob, std::ref(fa_handler), std::ref(handler_ex));
         std::thread monitor_thread(monitorJob, std::ref(monitor), std::ref(monitor_ex));
+        std::thread test_thread(Test1, std::ref(test_ex));
 
         if (handler_thread.joinable()) {
             handler_thread.join();
@@ -51,6 +58,10 @@ void basicTest() {
 
         if (monitor_thread.joinable()) {
             monitor_thread.join();
+        }
+
+        if (test_thread.joinable()) {
+            test_thread.join();
         }
 
     } catch (std::system_error& e) {
@@ -67,8 +78,6 @@ void basicTest() {
 
     std::cout << "passed basic test" << std::endl;
 }
-
-
 
 void handlerJob(FaNotifyHandler &fa, std::exception_ptr& ex) {
 
@@ -88,3 +97,18 @@ void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex) {
         ex = eptr;
     }
 }
+
+void Test1(std::exception_ptr& ex) {
+    (void)ex;
+    // std::this_thread::sleep_for(std::chrono::seconds(3));
+
+    // try {
+    //     system("nano /home/itamarbloch-lap/Desktop/CppIntro/fanotify/tracked.txt");
+    //     //system("nano ~/Desktop/CppIntro/fanotify/tracked.txt");
+    // } catch(std::system_error& e) {
+    //     std::cerr << "failed opening errno: " << errno << "what: " << e.what() << std::endl;
+    // } catch(...) {
+    //     std::cerr << "failed defaulkt opening errno: " << errno << std::endl;
+    // }
+}
+

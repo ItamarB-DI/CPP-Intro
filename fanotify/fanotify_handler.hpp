@@ -11,9 +11,9 @@ class FaNotifyHandler {
 public:
     struct EventItem
     {
-        std::vector<char> m_path; // the path that the event occured on.
+        std::filesystem::path m_path; // the path that the event occured on.
         int m_fd; // the fd that the event occured on.
-        std::vector<char> m_process; // the process name that made that event 
+        std::filesystem::path m_process; // the process name that made that event 
         int m_pid; // the process that made that event
     };
     
