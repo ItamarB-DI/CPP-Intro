@@ -111,11 +111,13 @@ void Test1(std::exception_ptr& ex) {
     try {
         openNewTerminal(vim);
         openNewTerminal(nano); 
-    } catch (std::system_error& e) {
+    } catch (const std::system_error& e) {
+        auto eptr = std::current_exception();
+        ex = eptr;
+    } catch (const std::runtime_error& e) {
         auto eptr = std::current_exception();
         ex = eptr;
     }
-   
 }
 
 void openNewTerminal(const std::string &command) {
@@ -124,6 +126,9 @@ void openNewTerminal(const std::string &command) {
     auto status = system(terminalCommand.c_str());
     if (status == -1) {
         throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "system sys call failed");
+    }
+    if (status == 127) {
+        throw std::runtime_error("child shell terminated with status 127 (exit(2))");
     }
 }
 
