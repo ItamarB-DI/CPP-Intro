@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 
 
@@ -15,6 +18,7 @@ void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex);
 
 void basicTest();
 void Test1(std::exception_ptr& ex);
+void openNewTerminal(const std::string &command);
 
 int main() {
 
@@ -35,10 +39,11 @@ void basicTest() {
 
     std::filesystem::path code = "/snap/code/177/usr/share/code/code";
     std::filesystem::path gedit = "/usr/bin/gedit";
+    std::filesystem::path vim = "/usr/bin/vim.basic";
     
     std::vector<std::filesystem::path> paths_to_listen_to({tracked_file, monitored_file});
     std::vector<std::filesystem::path> tracked_paths({tracked_file});
-    std::vector<std::filesystem::path> valid_processes({code, gedit});
+    std::vector<std::filesystem::path> valid_processes({code, gedit, vim});
 
     FaNotifyHandler fa_handler(paths_to_listen_to);
     FileSystemMonitor monitor(fa_handler, tracked_paths, valid_processes);
@@ -98,17 +103,27 @@ void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex) {
     }
 }
 
-void Test1(std::exception_ptr& ex) {
-    (void)ex;
-    // std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    // try {
-    //     system("nano /home/itamarbloch-lap/Desktop/CppIntro/fanotify/tracked.txt");
-    //     //system("nano ~/Desktop/CppIntro/fanotify/tracked.txt");
-    // } catch(std::system_error& e) {
-    //     std::cerr << "failed opening errno: " << errno << "what: " << e.what() << std::endl;
-    // } catch(...) {
-    //     std::cerr << "failed defaulkt opening errno: " << errno << std::endl;
-    // }
+void Test1(std::exception_ptr& ex) {
+    std::string vim = "vim tracked.txt"; 
+    std::string nano = "nano tracked.txt";
+
+    try {
+        openNewTerminal(vim);
+        openNewTerminal(nano); 
+    } catch (std::system_error& e) {
+        auto eptr = std::current_exception();
+        ex = eptr;
+    }
+   
+}
+
+void openNewTerminal(const std::string &command) {
+
+    std::string terminalCommand = "gnome-terminal -- bash -c '" + command + "; exec bash'";
+    auto status = system(terminalCommand.c_str());
+    if (status == -1) {
+        throw std::system_error(std::make_error_code(static_cast<std::errc>(errno)), "system sys call failed");
+    }
 }
 

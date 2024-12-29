@@ -1,7 +1,5 @@
 #include "file_system_monitor.hpp"
 
-#include <iostream>
-
 FileSystemMonitor::FileSystemMonitor(FaNotifyHandler& fa_handler,
                                      const std::vector<std::filesystem::path>& tracked_files, 
                                      const std::vector<std::filesystem::path>& valid_process)
@@ -31,8 +29,6 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
     
     bool process_is_valid = false;
     bool path_is_valid = false;
-
-    std::cout << process_name.c_str() << std::endl; //for testing
 
     for (auto valid_process: m_valid_processes) {
         if (process_name == valid_process) {
