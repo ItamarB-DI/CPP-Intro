@@ -17,7 +17,7 @@ void handlerJob(FaNotifyHandler &fa, std::exception_ptr& ex);
 void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex);
 
 void basicTest();
-void Test1(std::exception_ptr& ex);
+void Test1(std::exception_ptr& ex, FaNotifyHandler &fa, FileSystemMonitor &monitor);
 void openNewTerminal(const std::string &command);
 
 int main() {
@@ -55,7 +55,7 @@ void basicTest() {
     try {
         std::thread handler_thread(handlerJob, std::ref(fa_handler), std::ref(handler_ex));
         std::thread monitor_thread(monitorJob, std::ref(monitor), std::ref(monitor_ex));
-        std::thread test_thread(Test1, std::ref(test_ex));
+        std::thread test_thread(Test1, std::ref(test_ex), std::ref(fa_handler), std::ref(monitor));
 
         if (handler_thread.joinable()) {
             handler_thread.join();
@@ -104,13 +104,17 @@ void monitorJob(FileSystemMonitor &monitor, std::exception_ptr& ex) {
 }
 
 
-void Test1(std::exception_ptr& ex) {
+void Test1(std::exception_ptr& ex, FaNotifyHandler &fa, FileSystemMonitor &monitor) {
     std::string vim = "vim tracked.txt"; 
     std::string nano = "nano tracked.txt";
 
     try {
         openNewTerminal(vim);
         openNewTerminal(nano); 
+
+        fa.stopListening();
+        monitor.stop();
+
     } catch (const std::system_error& e) {
         auto eptr = std::current_exception();
         ex = eptr;
