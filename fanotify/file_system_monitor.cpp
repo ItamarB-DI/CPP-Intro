@@ -28,7 +28,7 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
     auto path = event.m_path;
     
     bool process_is_valid = false;
-    bool path_is_valid = false;
+    bool path_is_tracked = false;
 
     for (auto valid_process: m_valid_processes) {
         if (process_name == valid_process) {
@@ -39,16 +39,16 @@ unsigned int FileSystemMonitor::checkEvent(const FaNotifyHandler::EventItem& eve
 
     for (auto tracked_file: m_tracked_files) {
         if (path == tracked_file) {
-            path_is_valid = true;
+            path_is_tracked = true;
             break;
         }
     }
 
-    if (path_is_valid == true && process_is_valid == false) {
+    if (path_is_tracked == true && process_is_valid == false) {
         return FAN_DENY;
     }
 
-    if (path_is_valid == false || process_is_valid == true) {
+    if (path_is_tracked == false || process_is_valid == true) {
         return FAN_ACCESS;
     }
 
